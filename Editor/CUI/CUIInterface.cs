@@ -1,8 +1,12 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using UTJ.ProfilerReader.Analyzer;
-using UnityEngine;
 using System.IO;
+using System.Threading;
+using UnityEditor;
+using UnityEngine;
+using UTJ.ProfilerReader.Analyzer;
+using UTJ.ProfilerReader.RawData;
+
 namespace UTJ.ProfilerReader
 {
     public class CUIInterface
@@ -13,7 +17,6 @@ namespace UTJ.ProfilerReader
 
         public enum CsvFileType
         {
-
         };
 
         private static int timeoutSec = 0;
@@ -27,12 +30,13 @@ namespace UTJ.ProfilerReader
         {
             Debug.Log("SetTimeout " + sec);
             timeoutSec = sec;
-            System.Threading.Thread th = new System.Threading.Thread(TimeOutExecute);
+            Thread th = new Thread(TimeOutExecute);
             th.Start();
         }
+
         public static void TimeOutExecute()
         {
-            System.Threading.Thread.Sleep(timeoutSec * 1000);
+            Thread.Sleep(timeoutSec * 1000);
             Debug.Log("Timeout!!!");
             currentReader.ForceExit();
             timeouted = true;
@@ -40,8 +44,9 @@ namespace UTJ.ProfilerReader
 
         public static void ProfilerToCsv()
         {
-            var args = System.Environment.GetCommandLineArgs();
+            var args = Environment.GetCommandLineArgs();
             string inputFile = null;
+            string inputDir = null;
             string outputDir = null;
             bool exitFlag = true;
             bool logFlag = false;
@@ -54,49 +59,88 @@ namespace UTJ.ProfilerReader
                     inputFile = args[i + 1];
                     i += 1;
                 }
+
+                if (args[i] == "-PH.inputDir")
+                {
+                    inputDir = args[i + 1];
+                    i += 1;
+                }
+
                 if (args[i] == "-PH.outputDir")
                 {
                     outputDir = args[i + 1];
                     i += 1;
                 }
+
                 if (args[i] == "-PH.timeout")
                 {
                     SetTimeout(int.Parse(args[i + 1]));
                     i += 1;
                 }
-                if( args[i] == "-PH.overrideUnityVersion")
+
+                if (args[i] == "-PH.overrideUnityVersion")
                 {
                     overrideUnityVersion = args[i + 1];
                     i += 1;
                 }
+
                 if (args[i] == "-PH.exitcode")
                 {
                     exitFlag = true;
                 }
+
                 if (args[i] == "-PH.log")
                 {
                     logFlag = true;
                 }
+
                 if (args[i] == "-PH.dirLegacy") ;
                 {
                     isLegacyOutputDirPath = true;
                 }
             }
-            int code = ProfilerToCsv(inputFile, outputDir, logFlag, isLegacyOutputDirPath);
-            if(timeouted)
+
+            int code = 0;
+            if (inputFile != null)
+            {
+                code = ProfilerToCsv(inputFile, outputDir, logFlag, isLegacyOutputDirPath);
+            }
+            else
+            {
+                code = BatchProfilerToCsv(inputDir, outputDir, logFlag, isLegacyOutputDirPath);
+            }
+
+            if (timeouted)
             {
                 code = TimeoutCode;
             }
+
             if (exitFlag)
             {
-                UnityEditor.EditorApplication.Exit(code);
+                EditorApplication.Exit(code);
             }
         }
 
-        public static int ProfilerToCsv(string inputFile,string outputDir,bool logFlag,bool isLegacyOutputDirPath)
+        public static int BatchProfilerToCsv(string inputDir, string outputDir, bool logFlag,
+            bool isLegacyOutputDirPath)
+        {
+            var files = Directory.GetFiles(inputDir, "*.raw");
+            foreach (var file in files)
+            {
+                int code = ProfilerToCsv(file, outputDir, logFlag, isLegacyOutputDirPath);
+                if (code != NormalCode)
+                {
+                    return code;
+                }
+            }
+
+            return NormalCode;
+        }
+
+        public static int ProfilerToCsv(string inputFile, string outputDir, bool logFlag, bool isLegacyOutputDirPath)
         {
             int retCode = NormalCode;
-            if ( string.IsNullOrEmpty(outputDir))
+            if (string.IsNullOrEmpty(outputDir))
             {
                 if (isLegacyOutputDirPath)
                 {
@@ -115,12 +159,13 @@ namespace UTJ.ProfilerReader
             List<IAnalyzeFileWriter> analyzeExecutes = AnalyzerUtil.CreateAnalyzerInterfaceObjects();
 
             var frameData = logReader.ReadFrameData();
-            SetAnalyzerInfo(analyzeExecutes, logReader,outputDir,inputFile);
+            SetAnalyzerInfo(analyzeExecutes, logReader, outputDir, inputFile);
 
-            if ( frameData == null)
+            if (frameData == null)
             {
                 Debug.LogError("No FrameDataFile " + inputFile);
             }
+
             // Loop and execute each frame
             while (frameData != null)
             {
@@ -129,10 +174,10 @@ namespace UTJ.ProfilerReader
                     frameData = logReader.ReadFrameData();
                     if (logFlag && frameData != null)
                     {
-                        System.Console.WriteLine("ReadFrame:" + frameData.frameIndex);
+                        Console.WriteLine("ReadFrame:" + frameData.frameIndex);
                     }
                 }
-                catch (System.Exception e)
+                catch (Exception e)
                 {
                     retCode = ReadErrorCode;
                     Debug.LogError(e);
@@ -142,41 +187,48 @@ namespace UTJ.ProfilerReader
                 {
                     try
                     {
-                        if (frameData != null) {
+                        if (frameData != null)
+                        {
                             analyzer.CollectData(frameData);
                         }
-                    }catch(System.Exception e)
+                    }
+                    catch (Exception e)
                     {
                         Debug.LogError(e);
                     }
                 }
-                System.GC.Collect();
+
+                GC.Collect();
             }
+
             foreach (var analyzer in analyzeExecutes)
             {
-                analyzer.WriteResultFile(System.IO.Path.GetFileName(inputFile), outputDir);
+                analyzer.WriteResultFile(Path.GetFileName(inputFile), outputDir);
             }
 
             return retCode;
         }
+
         private static void SetAnalyzerInfo(List<IAnalyzeFileWriter> analyzeExecutes,
             ILogReaderPerFrameData logReader,
-            string outDir,string inFile)
+            string outDir, string inFile)
         {
             ProfilerLogFormat format = ProfilerLogFormat.TypeData;
-            if (logReader.GetType() == typeof(UTJ.ProfilerReader.RawData.ProfilerRawLogReader))
+            if (logReader.GetType() == typeof(ProfilerRawLogReader))
             {
                 format = ProfilerLogFormat.TypeRaw;
             }
+
             string unityVersion = Application.unityVersion;
-            if ( !string.IsNullOrEmpty(overrideUnityVersion))
+            if (!string.IsNullOrEmpty(overrideUnityVersion))
             {
                 unityVersion = overrideUnityVersion;
             }
+
             foreach (var analyzer in analyzeExecutes)
             {
                 analyzer.SetInfo(format, unityVersion, logReader.GetLogFileVersion(), logReader.GetLogFilePlatform());
-                analyzer.SetFileInfo(inFile,outDir);
+                analyzer.SetFileInfo(inFile, outDir);
             }
         }
     }
