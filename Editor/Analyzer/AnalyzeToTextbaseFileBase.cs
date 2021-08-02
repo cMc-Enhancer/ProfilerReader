@@ -4,9 +4,6 @@ using UTJ.ProfilerReader.BinaryData;
 
 namespace UTJ.ProfilerReader.Analyzer
 {
-
-
-
     public abstract class AnalyzeToTextbaseFileBase : IAnalyzeFileWriter
     {
         protected ProfilerLogFormat logFormat

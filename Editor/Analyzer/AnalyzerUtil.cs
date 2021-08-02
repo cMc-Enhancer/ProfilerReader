@@ -12,6 +12,7 @@ namespace UTJ.ProfilerReader.Analyzer
             return new List<IAnalyzeFileWriter>
             {
                 new AiScriptAnalyzeToFile(),
+                new SoundScriptAnalyzeToFile(),
                 new MainThreadAnalyzeToFile(),
                 new MainThreadCategoryAnalyzeToFile(),
                 new RenderingAnalyzeToFile(),
