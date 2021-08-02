@@ -48,7 +48,7 @@ namespace UTJ.ProfilerReader.UI {
         {
             this.isWindowExists = true;
             this.fileWriterFlags.Clear();
-            var types = AnalyzerUtil.GetInterfaceType<IAnalyzeFileWriter>();
+            var types = AnalyzerUtil.GetInterfaceTypes<IAnalyzeFileWriter>();
             foreach( var t in types)
             {
                 this.fileWriterFlags.Add(new FileWriterFlag() { name = t.Name, type = t, flag = true });

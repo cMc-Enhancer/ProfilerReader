@@ -4,7 +4,6 @@ using UTJ.ProfilerReader.BinaryData;
 
 namespace UTJ.ProfilerReader.Analyzer
 {
-
     public class ThreadAnalyzeToFile : AnalyzeToTextbaseFileBase
     {
         private class ThreadViewData
@@ -31,7 +30,6 @@ namespace UTJ.ProfilerReader.Analyzer
                 maxFrame = ProfilerLogUtil.Max(frame, maxFrame);
                 if (!this.totalMsecList.ContainsKey(frame))
                 {
-
                     this.totalMsecList.Add(frame, total);
                     this.idleMsecList.Add(frame, idle);
                     this.totalCount.Add(frame, totalCnt);
@@ -39,7 +37,7 @@ namespace UTJ.ProfilerReader.Analyzer
                 }
                 else
                 {
-                    ProfilerLogUtil.logErrorString("same frame " + threadName +"::" + frame);
+                    ProfilerLogUtil.logErrorString("same frame " + threadName + "::" + frame);
                 }
             }
 
@@ -53,19 +51,20 @@ namespace UTJ.ProfilerReader.Analyzer
                 idleCount.TryGetValue(frame, out idleCnt);
             }
         }
-        private Dictionary<string, ThreadViewData> viewData = new Dictionary<string, ThreadViewData>();
+
+        private readonly Dictionary<string, ThreadViewData> viewData = new Dictionary<string, ThreadViewData>();
 
         const string FrameWholeDataSpecialKey = "CPUTotal";
 
         public override void CollectData(ProfilerFrameData frameData)
         {
             // 特別枠で frameDataのＣＰＵ時間を追加
-            ThreadViewData frameViewData = null;
-            if (!this.viewData.TryGetValue(FrameWholeDataSpecialKey, out frameViewData))
+            if (!viewData.TryGetValue(FrameWholeDataSpecialKey, out ThreadViewData frameViewData))
             {
                 frameViewData = new ThreadViewData(FrameWholeDataSpecialKey);
                 viewData.Add(FrameWholeDataSpecialKey, frameViewData);
             }
+
             frameViewData.AddMsec(frameData.frameIndex, frameData.m_TotalCPUTimeInMicroSec / 1000.0f, 0.0f, 0, 0);
 
             // 同一フレーム内に同じスレッド名が複数できるので…
@@ -73,26 +72,30 @@ namespace UTJ.ProfilerReader.Analyzer
             foreach (var thread in frameData.m_ThreadData)
             {
                 string threadName = thread.FullName;
-                if (threadName == null) { continue; }
-                int cnt = 0;
-                if (threadNameCounter.TryGetValue(threadName, out cnt))
+                if (threadName == null)
+                {
+                    continue;
+                }
+
+                if (threadNameCounter.TryGetValue(threadName, out int cnt))
                 {
                     ++cnt;
                     threadName = threadName + cnt;
                 }
+
                 threadNameCounter[threadName] = cnt;
-                this.AddDataTo(frameData.frameIndex, threadName, thread);
+                AddDataTo(frameData.frameIndex, threadName, thread);
             }
         }
 
         private void AddDataTo(int frameIdx, string threadName, ThreadData data)
         {
-            ThreadViewData threadViewData = null;
-            if (!this.viewData.TryGetValue(threadName, out threadViewData))
+            if (!viewData.TryGetValue(threadName, out ThreadViewData threadViewData))
             {
                 threadViewData = new ThreadViewData(threadName);
                 viewData.Add(threadName, threadViewData);
             }
+
             float totalMsec = 0.0f;
             float idleMsec = 0.0f;
             int totalCount = 0;
@@ -104,14 +107,16 @@ namespace UTJ.ProfilerReader.Analyzer
                     if (sample.parent == null)
                     {
                         idleMsec += GetSumOfTimeInSampleChildren(sample, "Idle", ref idleCount);
-                        totalMsec += GetSumeOfTimeWithNamedSampleInChildren(sample, ref totalCount);// sample.timeUS / 1000.0f;
+                        totalMsec +=
+                            GetSumOfTimeWithNamedSampleInChildren(sample, ref totalCount); // sample.timeUS / 1000.0f;
                     }
                 }
             }
+
             threadViewData.AddMsec(frameIdx, totalMsec, idleMsec, totalCount, idleCount);
         }
 
-        private float GetSumeOfTimeWithNamedSampleInChildren(ProfilerSample sample, ref int count)
+        private float GetSumOfTimeWithNamedSampleInChildren(ProfilerSample sample, ref int count)
         {
             float sum = 0.0f;
             if (!string.IsNullOrEmpty(sample.sampleName))
@@ -119,26 +124,34 @@ namespace UTJ.ProfilerReader.Analyzer
                 count += 1;
                 return sample.timeUS / 1000.0f;
             }
+
             if (sample.children == null)
             {
                 return sum;
             }
+
             foreach (var child in sample.children)
             {
-                sum += GetSumeOfTimeWithNamedSampleInChildren(child, ref count);
+                sum += GetSumOfTimeWithNamedSampleInChildren(child, ref count);
             }
+
             return sum;
         }
 
         private float GetSumOfTimeInSampleChildren(ProfilerSample sample, string matchStr, ref int count)
         {
             float sum = 0.0f;
-            if (sample == null) { return sum; }
+            if (sample == null)
+            {
+                return sum;
+            }
+
             if (sample.sampleName == matchStr)
             {
                 count += 1;
                 return sample.timeUS / 1000.0f;
             }
+
             if (sample.children == null)
             {
                 return sum;
@@ -148,6 +161,7 @@ namespace UTJ.ProfilerReader.Analyzer
             {
                 sum += GetSumOfTimeInSampleChildren(child, matchStr, ref count);
             }
+
             return sum;
         }
 
@@ -174,8 +188,10 @@ namespace UTJ.ProfilerReader.Analyzer
                     csvStringGenerator.AppendColumn("rootBlock");
                     csvStringGenerator.AppendColumn("idleBlock").AppendColumn("");
                 }
+
                 frameNum = ProfilerLogUtil.Max(data.maxFrame, frameNum);
             }
+
             csvStringGenerator.NextRow();
 
             for (int i = 0; i < frameNum; ++i)
@@ -195,18 +211,16 @@ namespace UTJ.ProfilerReader.Analyzer
                         csvStringGenerator.AppendColumn(totalCnt).AppendColumn(idleCnt).AppendColumn("");
                     }
                 }
+
                 csvStringGenerator.NextRow();
             }
+
             return csvStringGenerator.ToString();
         }
-        
+
         protected override string FooterName
         {
-            get
-            {
-                return "_result.csv";
-            }
+            get { return "_result.csv"; }
         }
-
     }
 }

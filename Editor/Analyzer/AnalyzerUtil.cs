@@ -6,13 +6,26 @@ namespace UTJ.ProfilerReader.Analyzer
 {
     public class AnalyzerUtil
     {
-        public static List<IAnalyzeFileWriter> CreateAnalyzerInterfaceObjects()
+
+        public static List<IAnalyzeFileWriter> CreateSourceTestAnalyzer()
         {
-            var types = GetInterfaceType<IAnalyzeFileWriter>();
-            return CreateInstanciateObjects<IAnalyzeFileWriter>(types);
+            return new List<IAnalyzeFileWriter>
+            {
+                new AiScriptAnalyzeToFile(),
+                new MainThreadAnalyzeToFile(),
+                new MainThreadCategoryAnalyzeToFile(),
+                new RenderingAnalyzeToFile(),
+                new RenderThreadToFile(),
+            };
+        } 
+        
+        public static List<IAnalyzeFileWriter> CreateAllAnalyzer()
+        {
+            var types = GetInterfaceTypes<IAnalyzeFileWriter>();
+            return InstanciateObjectsOfType<IAnalyzeFileWriter>(types);
         }
 
-        private static List<T> CreateInstanciateObjects<T>(List<System.Type> types) where T : class
+        private static List<T> InstanciateObjectsOfType<T>(List<System.Type> types) where T : class
         {
             List<T> ret = new List<T>();
             foreach (var t in types)
@@ -24,7 +37,7 @@ namespace UTJ.ProfilerReader.Analyzer
             return ret;
         }
 
-        public static List<System.Type> GetInterfaceType<T>()
+        public static List<System.Type> GetInterfaceTypes<T>()
         {
             List<System.Type> ret = new List<Type>();
             var domain = System.AppDomain.CurrentDomain;

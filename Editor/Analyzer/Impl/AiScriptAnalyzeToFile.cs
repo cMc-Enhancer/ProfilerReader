@@ -94,7 +94,7 @@ namespace UTJ.ProfilerReader.Analyzer
 
         protected override string FooterName
         {
-            get { return "_ai_script.csv"; }
+            get { return "_ai_method_per_frame.csv"; }
         }
     }
 }

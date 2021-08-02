@@ -122,7 +122,7 @@ namespace UTJ.ProfilerReader.Analyzer
         {
             get
             {
-                return "_category_mainThread_frame.csv";
+                return "_main_thread_category_per_frame.csv";
             }
         }
 

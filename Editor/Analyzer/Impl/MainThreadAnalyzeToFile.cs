@@ -160,7 +160,7 @@ namespace UTJ.ProfilerReader.Analyzer
 
         protected override string FooterName
         {
-            get { return "_main_self.csv"; }
+            get { return "_main_thread_methods_statistics.csv"; }
         }
     }
 }
