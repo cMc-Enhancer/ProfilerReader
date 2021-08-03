@@ -11,7 +11,7 @@ namespace UTJ.ProfilerReader.Analyzer
             public Dictionary<string, float> Samples { get; } = new Dictionary<string, float>();
         }
 
-        private readonly List<FrameSampleData> frameSampleData = new List<FrameSampleData>();
+        private readonly List<FrameSampleData> allFrameSampleData = new List<FrameSampleData>();
         private readonly HashSet<string> distinctSampleNames = new HashSet<string>();
 
         public sealed override void CollectData(ProfilerFrameData frameData)
@@ -28,7 +28,7 @@ namespace UTJ.ProfilerReader.Analyzer
                 CollectSample(sample, data);
             }
 
-            frameSampleData.Add(data);
+            allFrameSampleData.Add(data);
         }
 
         private void CollectSample(ProfilerSample sample, FrameSampleData data)
@@ -69,7 +69,7 @@ namespace UTJ.ProfilerReader.Analyzer
             csvStringGenerator.NextRow();
 
             int frameNum = 1;
-            foreach (FrameSampleData sampleData in frameSampleData)
+            foreach (FrameSampleData sampleData in allFrameSampleData)
             {
                 float total = 0.0f;
                 csvStringGenerator.AppendColumn(frameNum);
