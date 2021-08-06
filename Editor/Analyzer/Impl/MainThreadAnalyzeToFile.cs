@@ -125,11 +125,6 @@ namespace UTJ.ProfilerReader.Analyzer
 
         protected override string GetResultText()
         {
-            CsvStringGenerator csvStringGenerator = new CsvStringGenerator();
-            csvStringGenerator.AppendColumn("name").AppendColumn("fullname").AppendColumn("category")
-                .AppendColumn("callNum").AppendColumn("self").AppendColumn("sum(msec)").AppendColumn("perFrame(msec)")
-                .AppendColumn("min(msec)").AppendColumn("max(msec)").AppendColumn("total").AppendColumn("sum(msec)")
-                .AppendColumn("perFrame(msec)").AppendColumn("min(msec)").AppendColumn("max(msec)").NextRow();
             var sampleDataList = new List<SampleData>(_samples.Values);
             sampleDataList.Sort((a, b) =>
             {
@@ -145,19 +140,37 @@ namespace UTJ.ProfilerReader.Analyzer
 
                 return 0;
             });
+
+            CsvStringGenerator csvStringGenerator = new CsvStringGenerator();
+            csvStringGenerator.AppendColumn("name")
+                .AppendColumn("fullname")
+                .AppendColumn("category")
+                .AppendColumn("callNum")
+                .AppendColumn("selfSum(msec)")
+                .AppendColumn("selfPerFrame(msec)")
+                .AppendColumn("selfMin(msec)")
+                .AppendColumn("selfMax(msec)")
+                // .AppendColumn("totalSum(msec)")
+                // .AppendColumn("totalPerFrame(msec)")
+                // .AppendColumn("totalMin(msec)")
+                // .AppendColumn("totalMax(msec)")
+                .NextRow();
+
             foreach (var sampleData in sampleDataList)
             {
-                csvStringGenerator.AppendColumn(sampleData.sampleName).AppendColumn(sampleData.fullName)
-                    .AppendColumn(sampleData.categoryName).AppendColumn(sampleData.CallNum).AppendColumn("");
-
-                csvStringGenerator.AppendColumn(sampleData.TotalSelfMsec)
-                    .AppendColumn(sampleData.TotalSelfMsec / _frameNum).AppendColumn(sampleData.SelfMinMSec)
-                    .AppendColumn(sampleData.SelfMaxMsec).AppendColumn("");
-
-                csvStringGenerator.AppendColumn(sampleData.TotalExecMsec)
-                    .AppendColumn(sampleData.TotalExecMsec / _frameNum).AppendColumn(sampleData.ExecMinMSec)
-                    .AppendColumn(sampleData.ExecMaxMsec);
-                csvStringGenerator.NextRow();
+                csvStringGenerator.AppendColumn(sampleData.sampleName)
+                    .AppendColumn(sampleData.fullName)
+                    .AppendColumn(sampleData.categoryName)
+                    .AppendColumn(sampleData.CallNum)
+                    .AppendColumn(sampleData.TotalSelfMsec)
+                    .AppendColumn(sampleData.TotalSelfMsec / _frameNum)
+                    .AppendColumn(sampleData.SelfMinMSec)
+                    .AppendColumn(sampleData.SelfMaxMsec)
+                    // .AppendColumn(sampleData.TotalExecMsec)
+                    // .AppendColumn(sampleData.TotalExecMsec / _frameNum)
+                    // .AppendColumn(sampleData.ExecMinMSec)
+                    // .AppendColumn(sampleData.ExecMaxMsec)
+                    .NextRow();
             }
 
             return csvStringGenerator.ToString();
