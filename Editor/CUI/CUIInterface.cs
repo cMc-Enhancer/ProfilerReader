@@ -131,13 +131,10 @@ namespace UTJ.ProfilerReader
             bool isLegacyOutputDirPath, bool enableAllAnalyzers)
         {
             var files = Directory.GetFiles(inputDir, "*.raw");
+            int code = 0;
             foreach (var file in files)
             {
-                int code = ProfilerToCsv(file, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers);
-                if (code != NormalCode)
-                {
-                    return code;
-                }
+                code = Math.Max(ProfilerToCsv(file, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers), code);
             }
 
             return NormalCode;
@@ -163,8 +160,9 @@ namespace UTJ.ProfilerReader
             var logReader = ProfilerLogUtil.CreateLogReader(inputFile);
             currentReader = logReader;
 
-            List<IAnalyzeFileWriter> analyzers;
-            analyzers = enableAllAnalyzers ? AnalyzerUtil.CreateAllAnalyzer() : AnalyzerUtil.CreateSourceTestAnalyzer();
+            var analyzers = enableAllAnalyzers
+                ? AnalyzerUtil.CreateAllAnalyzer()
+                : AnalyzerUtil.CreateSourceTestAnalyzer();
 
             var frameData = logReader.ReadFrameData();
             SetAnalyzerInfo(analyzers, logReader, outputDir, inputFile);
