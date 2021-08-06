@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using UTJ.ProfilerReader.BinaryData;
 
-
 namespace UTJ.ProfilerReader.Analyzer
 {
     public class MainThreadAnalyzeToFile : AnalyzeToTextbaseFileBase
@@ -44,10 +43,16 @@ namespace UTJ.ProfilerReader.Analyzer
 
         private readonly Dictionary<string, SampleData> _samples = new Dictionary<string, SampleData>();
         private int _frameNum = 0;
+        private SampleData total;
+
+        public MainThreadAnalyzeToFile()
+        {
+            total = new SampleData("Total", "Total", "Total");
+            _samples.Add("Total", total);
+        }
 
         public override void CollectData(ProfilerFrameData frameData)
         {
-            Dictionary<string, int> threadNameCounter = new Dictionary<string, int>(8);
             foreach (var thread in frameData.m_ThreadData)
             {
                 if (thread.IsMainThread)
@@ -114,6 +119,7 @@ namespace UTJ.ProfilerReader.Analyzer
                 _samples.Add(fullName, sampleData);
             }
 
+            total.Called(selfMsec, execMsec);
             sampleData.Called(selfMsec, execMsec);
         }
 
@@ -147,7 +153,6 @@ namespace UTJ.ProfilerReader.Analyzer
                 csvStringGenerator.AppendColumn(sampleData.TotalSelfMsec)
                     .AppendColumn(sampleData.TotalSelfMsec / _frameNum).AppendColumn(sampleData.SelfMinMSec)
                     .AppendColumn(sampleData.SelfMaxMsec).AppendColumn("");
-
 
                 csvStringGenerator.AppendColumn(sampleData.TotalExecMsec)
                     .AppendColumn(sampleData.TotalExecMsec / _frameNum).AppendColumn(sampleData.ExecMinMSec)
