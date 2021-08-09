@@ -5,7 +5,7 @@ namespace UTJ.ProfilerReader.Analyzer
     public class SoundScriptAnalyzeToFile : AbstractMethodSampleAnalyzer
     {
 
-        private static readonly List<string> MethodPatterns = new List<string>
+        public static readonly List<string> MethodPatterns = new List<string>
         {
             "AkAudioListener.Update()",
             "AkGameObj.OnTriggerExit()",
@@ -13,7 +13,7 @@ namespace UTJ.ProfilerReader.Analyzer
             "ImpactCollisionTrigger3D.OnCollisionEnter()",
             "ImpactManager.FixedUpdate()",
             "ImpactSlideAndRollTrigger3D.OnCollisionStay()",
-            "CharacterSoundSound.FixedUpdate()",
+            "CharacterSoundManager.FixedUpdate()",
             "SoundManager.FixedUpdate()",
             "WeaponSoundProjectile.FixedUpdate()",
             "AkGameObj",
