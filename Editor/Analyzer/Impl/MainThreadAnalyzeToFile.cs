@@ -1,25 +1,22 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using UTJ.ProfilerReader.BinaryData;
 
 namespace UTJ.ProfilerReader.Analyzer
 {
     public class MainThreadAnalyzeToFile : AnalyzeToTextbaseFileBase
     {
-        private class SampleData
+        private class SampleData : IComparable
         {
             public readonly string fullName;
             public readonly string sampleName;
             public readonly string categoryName;
 
-            public float TotalSelfMsec = 0.0f;
-            public float SelfMinMSec = float.MaxValue;
-            public float SelfMaxMsec = 0.0f;
-
-            public float TotalExecMsec = 0.0f;
-            public float ExecMinMSec = float.MaxValue;
-            public float ExecMaxMsec = 0.0f;
-
-            public int CallNum = 0;
+            private readonly List<float> selfMsecs = new List<float>();
+            private bool sorted = false;
+            private float avg = -1f;
+            private float stdv = -1f;
 
             public SampleData(string fullName, string sampleName, string categoryName)
             {
@@ -28,16 +25,77 @@ namespace UTJ.ProfilerReader.Analyzer
                 this.categoryName = categoryName;
             }
 
-            public void Called(float selfMsec, float execMsec)
+            public void Called(float selfMsec)
             {
-                SelfMinMSec = ProfilerLogUtil.Min(SelfMinMSec, selfMsec);
-                SelfMaxMsec = ProfilerLogUtil.Max(SelfMaxMsec, selfMsec);
-                TotalSelfMsec += selfMsec;
+                selfMsecs.Add(selfMsec);
+            }
 
-                ExecMinMSec = ProfilerLogUtil.Min(ExecMinMSec, execMsec);
-                ExecMaxMsec = ProfilerLogUtil.Max(ExecMaxMsec, execMsec);
-                TotalExecMsec += execMsec;
-                ++CallNum;
+            public float Sum()
+            {
+                return selfMsecs.Sum();
+            }
+
+            public float NinetyFifthPercentile()
+            {
+                EnsureSorted();
+                return selfMsecs[(int) (selfMsecs.Count * 0.95)];
+            }
+
+            public float NinetyNinthPercentile()
+            {
+                EnsureSorted();
+                return selfMsecs[(int) (selfMsecs.Count * 0.99)];
+            }
+
+            public float Max()
+            {
+                EnsureSorted();
+                return selfMsecs[selfMsecs.Count - 1];
+            }
+
+            public float Average()
+            {
+                if (avg < 0)
+                {
+                    avg = selfMsecs.Average();
+                }
+
+                return avg;
+            }
+
+            public float StandardDeviation()
+            {
+                EnsureSorted();
+
+                if (stdv < 0)
+                {
+                    Average();
+                    double sum = selfMsecs.Sum(d => Math.Pow(d - avg, 2));
+                    double sumOfDerivationAverage = Math.Sqrt(sum / selfMsecs.Count);
+                    stdv = (float) sumOfDerivationAverage;
+                }
+
+                return stdv;
+            }
+
+            public float CallCount()
+            {
+                return selfMsecs.Count;
+            }
+
+            private void EnsureSorted()
+            {
+                if (sorted)
+                {
+                    return;
+                }
+
+                selfMsecs.Sort();
+            }
+
+            public int CompareTo(object obj)
+            {
+                return -Sum().CompareTo(((SampleData) obj).Sum());
             }
         }
 
@@ -51,7 +109,7 @@ namespace UTJ.ProfilerReader.Analyzer
             _samples.Add("Total", total);
         }
 
-        public override void CollectData(ProfilerFrameData frameData)
+        public sealed override void CollectData(ProfilerFrameData frameData)
         {
             foreach (var thread in frameData.m_ThreadData)
             {
@@ -98,9 +156,19 @@ namespace UTJ.ProfilerReader.Analyzer
             }
         }
 
+        protected virtual bool IsSampleNameMatched(string name)
+        {
+            return true;
+        }
+
         private void AddSampleData(string fullName, string sampleName, string categoryName, float selfMsec,
             float execMsec)
         {
+            if (!IsSampleNameMatched(sampleName))
+            {
+                return;
+            }
+
             if (selfMsec < 0.0f)
             {
                 ProfilerLogUtil.logErrorString("minus Param " + sampleName + ":" + selfMsec + ":" + execMsec);
@@ -119,41 +187,26 @@ namespace UTJ.ProfilerReader.Analyzer
                 _samples.Add(fullName, sampleData);
             }
 
-            total.Called(selfMsec, execMsec);
-            sampleData.Called(selfMsec, execMsec);
+            total.Called(selfMsec);
+            sampleData.Called(selfMsec);
         }
 
         protected override string GetResultText()
         {
             var sampleDataList = new List<SampleData>(_samples.Values);
-            sampleDataList.Sort((a, b) =>
-            {
-                if (a.TotalSelfMsec > b.TotalSelfMsec)
-                {
-                    return -1;
-                }
-
-                if (a.TotalSelfMsec < b.TotalSelfMsec)
-                {
-                    return 1;
-                }
-
-                return 0;
-            });
+            sampleDataList.Sort();
 
             CsvStringGenerator csvStringGenerator = new CsvStringGenerator();
             csvStringGenerator.AppendColumn("name")
                 .AppendColumn("fullname")
                 .AppendColumn("category")
                 .AppendColumn("callNum")
-                .AppendColumn("selfSum(msec)")
-                .AppendColumn("selfPerFrame(msec)")
-                .AppendColumn("selfMin(msec)")
-                .AppendColumn("selfMax(msec)")
-                // .AppendColumn("totalSum(msec)")
-                // .AppendColumn("totalPerFrame(msec)")
-                // .AppendColumn("totalMin(msec)")
-                // .AppendColumn("totalMax(msec)")
+                .AppendColumn("perFrame(msec)")
+                .AppendColumn("perCall(msec)")
+                .AppendColumn("perCall95thPercentile(msec)")
+                .AppendColumn("perCall99thPercentile(msec)")
+                .AppendColumn("perCallMax(msec)")
+                .AppendColumn("standardDeviation(msec)")
                 .NextRow();
 
             foreach (var sampleData in sampleDataList)
@@ -161,15 +214,13 @@ namespace UTJ.ProfilerReader.Analyzer
                 csvStringGenerator.AppendColumn(sampleData.sampleName)
                     .AppendColumn(sampleData.fullName)
                     .AppendColumn(sampleData.categoryName)
-                    .AppendColumn(sampleData.CallNum)
-                    .AppendColumn(sampleData.TotalSelfMsec)
-                    .AppendColumn(sampleData.TotalSelfMsec / _frameNum)
-                    .AppendColumn(sampleData.SelfMinMSec)
-                    .AppendColumn(sampleData.SelfMaxMsec)
-                    // .AppendColumn(sampleData.TotalExecMsec)
-                    // .AppendColumn(sampleData.TotalExecMsec / _frameNum)
-                    // .AppendColumn(sampleData.ExecMinMSec)
-                    // .AppendColumn(sampleData.ExecMaxMsec)
+                    .AppendColumn(sampleData.CallCount())
+                    .AppendColumn(sampleData.Sum() / _frameNum)
+                    .AppendColumn(sampleData.Average())
+                    .AppendColumn(sampleData.NinetyFifthPercentile())
+                    .AppendColumn(sampleData.NinetyNinthPercentile())
+                    .AppendColumn(sampleData.Max())
+                    .AppendColumn(sampleData.StandardDeviation())
                     .NextRow();
             }
 
