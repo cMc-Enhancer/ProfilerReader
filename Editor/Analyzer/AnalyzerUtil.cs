@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
-
 namespace UTJ.ProfilerReader.Analyzer
 {
     public class AnalyzerUtil
     {
-
         public static List<IAnalyzeFileWriter> CreateSourceTestAnalyzer()
         {
             return new List<IAnalyzeFileWriter>
@@ -18,30 +16,35 @@ namespace UTJ.ProfilerReader.Analyzer
                 new RenderingAnalyzeToFile(),
                 new RenderThreadToFile(),
             };
-        } 
-        
+        }
+
         public static List<IAnalyzeFileWriter> CreateAllAnalyzer()
         {
             var types = GetInterfaceTypes<IAnalyzeFileWriter>();
             return InstanciateObjectsOfType<IAnalyzeFileWriter>(types);
         }
 
-        private static List<T> InstanciateObjectsOfType<T>(List<System.Type> types) where T : class
+        private static List<T> InstanciateObjectsOfType<T>(List<Type> types) where T : class
         {
             List<T> ret = new List<T>();
             foreach (var t in types)
             {
-                if (t.IsAbstract) { continue; }
+                if (t.IsAbstract)
+                {
+                    continue;
+                }
+
                 var inst = Activator.CreateInstance(t) as T;
                 ret.Add(inst);
             }
+
             return ret;
         }
 
-        public static List<System.Type> GetInterfaceTypes<T>()
+        public static List<Type> GetInterfaceTypes<T>()
         {
-            List<System.Type> ret = new List<Type>();
-            var domain = System.AppDomain.CurrentDomain;
+            List<Type> ret = new List<Type>();
+            var domain = AppDomain.CurrentDomain;
             var assemblies = domain.GetAssemblies();
             foreach (var assembly in assemblies)
             {
@@ -49,10 +52,7 @@ namespace UTJ.ProfilerReader.Analyzer
                 foreach (var type in types)
                 {
                     var interfaces = type.GetInterfaces();
-                    if (interfaces == null)
-                    {
-                        continue;
-                    }
+
                     foreach (var interfacetype in interfaces)
                     {
                         if (interfacetype == typeof(T) && !type.IsAbstract)
@@ -62,8 +62,8 @@ namespace UTJ.ProfilerReader.Analyzer
                     }
                 }
             }
+
             return ret;
         }
-
     }
 }

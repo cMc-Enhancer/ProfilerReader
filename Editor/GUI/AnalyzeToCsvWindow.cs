@@ -1,25 +1,21 @@
-﻿using UnityEngine;
-using UnityEditor;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using UTJ.ProfilerReader.Analyzer;
-using System.Reflection;
 using System.IO;
+using System.Threading;
+using UnityEditor;
+using UnityEngine;
+using UTJ.ProfilerReader.Analyzer;
+using UTJ.ProfilerReader.RawData;
 
-namespace UTJ.ProfilerReader.UI {
-
-
-
+namespace UTJ.ProfilerReader.UI
+{
     public class AnalyzeToCsvWindow : EditorWindow
     {
-
-
         private class FileWriterFlag
         {
             public string name;
-            public System.Type type;
+            public Type type;
             public bool flag;
-            
         }
 
         private List<FileWriterFlag> fileWriterFlags = new List<FileWriterFlag>();
@@ -41,7 +37,7 @@ namespace UTJ.ProfilerReader.UI {
         [MenuItem("Tools/UTJ/ProfilerReader/AnalyzeToCsv")]
         public static void CreateWindow()
         {
-            EditorWindow.GetWindow<AnalyzeToCsvWindow>();
+            GetWindow<AnalyzeToCsvWindow>();
         }
 
         private void OnEnable()
@@ -49,11 +45,12 @@ namespace UTJ.ProfilerReader.UI {
             this.isWindowExists = true;
             this.fileWriterFlags.Clear();
             var types = AnalyzerUtil.GetInterfaceTypes<IAnalyzeFileWriter>();
-            foreach( var t in types)
+            foreach (var t in types)
             {
-                this.fileWriterFlags.Add(new FileWriterFlag() { name = t.Name, type = t, flag = true });
+                this.fileWriterFlags.Add(new FileWriterFlag() {name = t.Name, type = t, flag = true});
             }
         }
+
         private void OnDisable()
         {
             this.isWindowExists = false;
@@ -63,7 +60,8 @@ namespace UTJ.ProfilerReader.UI {
         {
             while (this.isWindowExists)
             {
-                if(!ExecuteFrame()){
+                if (!ExecuteFrame())
+                {
                     return;
                 }
             }
@@ -75,6 +73,7 @@ namespace UTJ.ProfilerReader.UI {
             {
                 return false;
             }
+
             try
             {
                 var frameData = logReader.ReadFrameData();
@@ -84,6 +83,7 @@ namespace UTJ.ProfilerReader.UI {
                     SetAnalyzerInfo(analyzeExecutes, logReader);
                     isFirstFrame = false;
                 }
+
                 if (frameData == null || forceStopRequest)
                 {
                     // write all result
@@ -91,29 +91,32 @@ namespace UTJ.ProfilerReader.UI {
                     {
                         analyzer.WriteResultFile(logfilename, outputDir);
                     }
+
                     requestDialogFlag = true;
                     logReader = null;
                     return false;
                 }
+
                 foreach (var analyzer in this.analyzeExecutes)
                 {
                     try
                     {
                         analyzer.CollectData(frameData);
                     }
-                    catch (System.Exception e)
+                    catch (Exception e)
                     {
                         Debug.LogError(e);
                     }
                 }
-                System.GC.Collect();
 
+                GC.Collect();
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 logReader = null;
                 Debug.LogError(e);
             }
+
             return true;
         }
 
@@ -125,6 +128,7 @@ namespace UTJ.ProfilerReader.UI {
             {
                 dialogStr += analyzer.GetType() + "\n";
             }
+
             EditorUtility.DisplayDialog("Result", dialogStr, "ok");
             analyzeExecutes.Clear();
         }
@@ -142,16 +146,18 @@ namespace UTJ.ProfilerReader.UI {
             {
                 EditorGUILayout.LabelField(this.filePath);
             }
+
             if (GUILayout.Button("File", GUILayout.Width(40.0f)))
             {
-                this.filePath = EditorUtility.OpenFilePanelWithFilters("", "Select BinaryLogFile", new string[] { "profiler log", "data,raw" });
+                this.filePath = EditorUtility.OpenFilePanelWithFilters("", "Select BinaryLogFile",
+                    new string[] {"profiler log", "data,raw"});
             }
 
             if (!IsExecute())
             {
                 if (GUILayout.Button("Analyze", GUILayout.Width(100)))
                 {
-                    if (string.IsNullOrEmpty(filePath) || !System.IO.File.Exists(filePath))
+                    if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
                     {
                         Debug.LogError("No such File ");
                     }
@@ -168,8 +174,9 @@ namespace UTJ.ProfilerReader.UI {
                     forceStopRequest = true;
                 }
             }
+
             EditorGUILayout.EndHorizontal();
-            if (IsExecute() )
+            if (IsExecute())
             {
                 EditorGUILayout.LabelField("Progress " + logReader.Progress * 100.0f + "%");
             }
@@ -178,7 +185,8 @@ namespace UTJ.ProfilerReader.UI {
                 for (int i = 0; i < fileWriterFlags.Count; ++i)
                 {
                     EditorGUILayout.BeginHorizontal();
-                    this.fileWriterFlags[i].flag = EditorGUILayout.Toggle(this.fileWriterFlags[i].flag ,GUILayout.Width(20) );
+                    this.fileWriterFlags[i].flag =
+                        EditorGUILayout.Toggle(this.fileWriterFlags[i].flag, GUILayout.Width(20));
                     EditorGUILayout.LabelField(this.fileWriterFlags[i].name);
                     EditorGUILayout.EndHorizontal();
                 }
@@ -197,14 +205,15 @@ namespace UTJ.ProfilerReader.UI {
             {
                 if (this.fileWriterFlags[i].flag)
                 {
-                    var analyzer = System.Activator.CreateInstance(fileWriterFlags[i].type) as IAnalyzeFileWriter;
+                    var analyzer = Activator.CreateInstance(fileWriterFlags[i].type) as IAnalyzeFileWriter;
                     analyzeExecutes.Add(analyzer);
                 }
             }
+
             // start analyze
             if (isMultiThreadExecute)
             {
-                var thread = new System.Threading.Thread(this.UpdateThread);
+                var thread = new Thread(this.UpdateThread);
                 thread.Start();
             }
         }
@@ -216,10 +225,12 @@ namespace UTJ.ProfilerReader.UI {
             {
                 this.ExecuteFrame();
             }
+
             if (IsExecute())
             {
                 this.Repaint();
             }
+
             if (requestDialogFlag)
             {
                 this.DisplayDialog();
@@ -243,21 +254,18 @@ namespace UTJ.ProfilerReader.UI {
 
         private void SetAnalyzerInfo(List<IAnalyzeFileWriter> analyzeExecutes, ILogReaderPerFrameData logReader)
         {
-
             ProfilerLogFormat format = ProfilerLogFormat.TypeData;
-            if (logReader.GetType() == typeof(UTJ.ProfilerReader.RawData.ProfilerRawLogReader))
+            if (logReader.GetType() == typeof(ProfilerRawLogReader))
             {
                 format = ProfilerLogFormat.TypeRaw;
             }
+
             foreach (var analyzer in analyzeExecutes)
             {
-                analyzer.SetInfo(format, Application.unityVersion, logReader.GetLogFileVersion(), logReader.GetLogFilePlatform());
+                analyzer.SetInfo(format, Application.unityVersion, logReader.GetLogFileVersion(),
+                    logReader.GetLogFilePlatform());
                 analyzer.SetFileInfo(logfilename, this.outputDir);
             }
         }
-
-
     }
-
-
 }
