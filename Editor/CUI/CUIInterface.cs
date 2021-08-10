@@ -15,10 +15,6 @@ namespace UTJ.ProfilerReader
         const int TimeoutCode = 10;
         const int ReadErrorCode = 11;
 
-        public enum CsvFileType
-        {
-        };
-
         private static int timeoutSec = 0;
         private static ILogReaderPerFrameData currentReader = null;
         private static bool timeouted = false;
@@ -134,7 +130,8 @@ namespace UTJ.ProfilerReader
             int code = 0;
             foreach (var file in files)
             {
-                code = Math.Max(ProfilerToCsv(file, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers), code);
+                code = Math.Max(ProfilerToCsv(file, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers),
+                    code);
             }
 
             return NormalCode;
