@@ -13,10 +13,13 @@ namespace UTJ.ProfilerReader.Analyzer
             public readonly string sampleName;
             public readonly string categoryName;
 
-            private readonly List<float> selfMsecs = new List<float>();
+            // Method may be called multiple times in single frame
+            private readonly List<List<float>> framesExecTimes = new List<List<float>>();
+            private List<float> flattenedCallExecTimes;
+            private List<float> flattenedFrameExecTimes;
+            private List<int> frameCallCounts;
+
             private bool sorted = false;
-            private float avg = -1f;
-            private float stdv = -1f;
 
             public SampleData(string fullName, string sampleName, string categoryName)
             {
@@ -25,72 +28,157 @@ namespace UTJ.ProfilerReader.Analyzer
                 this.categoryName = categoryName;
             }
 
+            public void NextFrame()
+            {
+                framesExecTimes.Add(new List<float>());
+            }
+
             public void Called(float selfMsec)
             {
-                selfMsecs.Add(selfMsec);
+                if (framesExecTimes.Count == 0)
+                {
+                    NextFrame();
+                }
+
+                framesExecTimes[framesExecTimes.Count - 1].Add(selfMsec);
             }
 
             public float Sum()
             {
-                return selfMsecs.Sum();
-            }
-
-            public float NinetyFifthPercentile()
-            {
-                EnsureSorted();
-                return selfMsecs[(int) (selfMsecs.Count * 0.95)];
-            }
-
-            public float NinetyNinthPercentile()
-            {
-                EnsureSorted();
-                return selfMsecs[(int) (selfMsecs.Count * 0.99)];
-            }
-
-            public float Max()
-            {
-                EnsureSorted();
-                return selfMsecs[selfMsecs.Count - 1];
-            }
-
-            public float Average()
-            {
-                if (avg < 0)
+                float sum = 0.0f;
+                foreach (List<float> frameExecTimes in framesExecTimes)
                 {
-                    avg = selfMsecs.Average();
+                    sum += frameExecTimes.Sum();
                 }
 
-                return avg;
+                return sum;
             }
 
-            public float StandardDeviation()
+            public float CallNinetyFifthPercentile()
             {
-                EnsureSorted();
+                EnsureFlattenedAndSorted();
+                return flattenedCallExecTimes[(int) (flattenedCallExecTimes.Count * 0.95)];
+            }
 
-                if (stdv < 0)
-                {
-                    Average();
-                    double sum = selfMsecs.Sum(d => Math.Pow(d - avg, 2));
-                    double sumOfDerivationAverage = Math.Sqrt(sum / selfMsecs.Count);
-                    stdv = (float) sumOfDerivationAverage;
-                }
+            public float CallNinetyNinthPercentile()
+            {
+                EnsureFlattenedAndSorted();
+                return flattenedCallExecTimes[(int) (flattenedCallExecTimes.Count * 0.99)];
+            }
 
-                return stdv;
+            public float CallMax()
+            {
+                EnsureFlattenedAndSorted();
+                return flattenedCallExecTimes[flattenedCallExecTimes.Count - 1];
+            }
+
+            public float CallAverage()
+            {
+                EnsureFlattenedAndSorted();
+
+                return flattenedCallExecTimes.Average();
+            }
+
+            public float CallStandardDeviation()
+            {
+                EnsureFlattenedAndSorted();
+
+                float avg = CallAverage();
+                double sum = flattenedCallExecTimes.Sum(d => Math.Pow(d - avg, 2));
+                double sumOfDerivationAverage = Math.Sqrt(sum / flattenedCallExecTimes.Count);
+                return (float) sumOfDerivationAverage;
             }
 
             public float CallCount()
             {
-                return selfMsecs.Count;
+                EnsureFlattenedAndSorted();
+                return flattenedCallExecTimes.Count;
             }
 
-            private void EnsureSorted()
+            public float FrameCallNinetyFifthPercentile()
+            {
+                EnsureFlattenedAndSorted();
+                return flattenedFrameExecTimes[(int) (flattenedFrameExecTimes.Count * 0.95)];
+            }
+
+            public float FrameCallNinetyNinthPercentile()
+            {
+                EnsureFlattenedAndSorted();
+                return flattenedFrameExecTimes[(int) (flattenedFrameExecTimes.Count * 0.99)];
+            }
+
+            public float FrameCallMax()
+            {
+                EnsureFlattenedAndSorted();
+                return flattenedFrameExecTimes[flattenedFrameExecTimes.Count - 1];
+            }
+
+            public float FrameCallAverage()
+            {
+                EnsureFlattenedAndSorted();
+
+                return flattenedFrameExecTimes.Average();
+            }
+
+            public float FrameCallStandardDeviation()
+            {
+                EnsureFlattenedAndSorted();
+
+                float avg = CallAverage();
+                double sum = flattenedFrameExecTimes.Sum(d => Math.Pow(d - avg, 2));
+                double sumOfDerivationAverage = Math.Sqrt(sum / flattenedFrameExecTimes.Count);
+                return (float) sumOfDerivationAverage;
+            }
+
+            public float AverageFrameCallCount()
+            {
+                EnsureFlattenedAndSorted();
+                return (float) frameCallCounts.Average();
+            }
+
+            public float NinetyFifthPercentileFrameCallCount()
+            {
+                EnsureFlattenedAndSorted();
+                return frameCallCounts[(int) (frameCallCounts.Count * 0.95)];
+            }
+
+            public float NinetyNinthPercentileFrameCallCount()
+            {
+                EnsureFlattenedAndSorted();
+                return frameCallCounts[(int) (frameCallCounts.Count * 0.99)];
+            }
+
+            public float MaxFrameCallCount()
+            {
+                EnsureFlattenedAndSorted();
+                return frameCallCounts[frameCallCounts.Count - 1];
+            }
+
+            private void EnsureFlattenedAndSorted()
             {
                 if (sorted)
                 {
                     return;
                 }
 
-                selfMsecs.Sort();
+                flattenedCallExecTimes = new List<float>(framesExecTimes.Count);
+                foreach (List<float> frameExecTimes in framesExecTimes)
+                {
+                    flattenedCallExecTimes.AddRange(frameExecTimes);
+                }
+
+                flattenedCallExecTimes.Sort();
+
+                frameCallCounts = new List<int>(framesExecTimes.Count);
+                flattenedFrameExecTimes = new List<float>(framesExecTimes.Count);
+                foreach (List<float> frameExecTimes in framesExecTimes)
+                {
+                    flattenedFrameExecTimes.Add(frameExecTimes.Sum());
+                    frameCallCounts.Add(frameExecTimes.Count);
+                }
+
+                frameCallCounts.Sort();
+                flattenedFrameExecTimes.Sort();
             }
 
             public int CompareTo(object obj)
@@ -100,7 +188,6 @@ namespace UTJ.ProfilerReader.Analyzer
         }
 
         private readonly Dictionary<string, SampleData> _samples = new Dictionary<string, SampleData>();
-        private int _frameNum = 0;
         private SampleData total;
 
         public MainThreadAnalyzeToFile()
@@ -111,6 +198,11 @@ namespace UTJ.ProfilerReader.Analyzer
 
         public sealed override void CollectData(ProfilerFrameData frameData)
         {
+            foreach (KeyValuePair<string, SampleData> pair in _samples)
+            {
+                pair.Value.NextFrame();
+            }
+
             foreach (var thread in frameData.m_ThreadData)
             {
                 if (thread.IsMainThread)
@@ -118,8 +210,6 @@ namespace UTJ.ProfilerReader.Analyzer
                     CollectThread(thread);
                 }
             }
-
-            ++_frameNum;
         }
 
         private void CollectThread(ThreadData thread)
@@ -206,7 +296,15 @@ namespace UTJ.ProfilerReader.Analyzer
                 .AppendColumn("perCall95thPercentile(msec)")
                 .AppendColumn("perCall99thPercentile(msec)")
                 .AppendColumn("perCallMax(msec)")
-                .AppendColumn("standardDeviation(msec)")
+                .AppendColumn("callStandardDeviation(msec)")
+                .AppendColumn("perFrameCall95thPercentile(msec)")
+                .AppendColumn("perFrameCall99thPercentile(msec)")
+                .AppendColumn("perFrameCallMax(msec)")
+                .AppendColumn("frameCallStandardDeviation(msec)")
+                .AppendColumn("averageFrameCallCount")
+                .AppendColumn("frameCallCount95thPercentile")
+                .AppendColumn("frameCallCount99thPercentile")
+                .AppendColumn("frameCallCountMax")
                 .NextRow();
 
             foreach (var sampleData in sampleDataList)
@@ -215,12 +313,20 @@ namespace UTJ.ProfilerReader.Analyzer
                     .AppendColumn(sampleData.fullName)
                     .AppendColumn(sampleData.categoryName)
                     .AppendColumn(sampleData.CallCount())
-                    .AppendColumn(sampleData.Sum() / _frameNum)
-                    .AppendColumn(sampleData.Average())
-                    .AppendColumn(sampleData.NinetyFifthPercentile())
-                    .AppendColumn(sampleData.NinetyNinthPercentile())
-                    .AppendColumn(sampleData.Max())
-                    .AppendColumn(sampleData.StandardDeviation())
+                    .AppendColumn(sampleData.FrameCallAverage())
+                    .AppendColumn(sampleData.CallAverage())
+                    .AppendColumn(sampleData.CallNinetyFifthPercentile())
+                    .AppendColumn(sampleData.CallNinetyNinthPercentile())
+                    .AppendColumn(sampleData.CallMax())
+                    .AppendColumn(sampleData.CallStandardDeviation())
+                    .AppendColumn(sampleData.FrameCallNinetyFifthPercentile())
+                    .AppendColumn(sampleData.FrameCallNinetyNinthPercentile())
+                    .AppendColumn(sampleData.FrameCallMax())
+                    .AppendColumn(sampleData.FrameCallStandardDeviation())
+                    .AppendColumn(sampleData.AverageFrameCallCount())
+                    .AppendColumn(sampleData.NinetyFifthPercentileFrameCallCount())
+                    .AppendColumn(sampleData.NinetyNinthPercentileFrameCallCount())
+                    .AppendColumn(sampleData.MaxFrameCallCount())
                     .NextRow();
             }
 
