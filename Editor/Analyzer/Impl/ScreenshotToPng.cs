@@ -1,25 +1,25 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using UnityEngine.Experimental.Rendering;
 using UTJ.ProfilerReader.BinaryData;
 using UTJ.ProfilerReader.RawData.Protocol;
-using System.Text;
-using System.IO;
-using System.Text.RegularExpressions;
-
 #if UNITY_EDITOR
 using UnityEngine;
 #endif
 
 namespace UTJ.ProfilerReader.Analyzer
 {
-    public class ScreenShotToProfiler : IAnalyzeFileWriter
+    public class ScreenShotToProfiler : IAnalyzer
     {
 
-        public static readonly System.Guid MetadataGuid = new System.Guid("4389DCEB-F9B3-4D49-940B-E98482F3A3F8");
+        public static readonly Guid MetadataGuid = new Guid("4389DCEB-F9B3-4D49-940B-E98482F3A3F8");
         public static readonly int InfoTag = -1;
 
         private string outputPath;
         private string logFile;
-        private bool createDir = false;
+        private bool createDir;
         private StringBuilder stringBuilder = new StringBuilder();
 
         private class CaptureData
@@ -33,12 +33,12 @@ namespace UTJ.ProfilerReader.Analyzer
 
             public CaptureData(int frameIdx ,byte[] data)
             {
-                this.profilerFrameIndex = frameIdx;
-                this.idx = GetIntValue(data, 0);
-                this.width = GetShortValue(data, 4);
-                this.height = GetShortValue(data, 6);
-                this.originWidth = GetShortValue(data, 8);
-                this.originHeight = GetShortValue(data, 10);
+                profilerFrameIndex = frameIdx;
+                idx = GetIntValue(data, 0);
+                width = GetShortValue(data, 4);
+                height = GetShortValue(data, 6);
+                originWidth = GetShortValue(data, 8);
+                originHeight = GetShortValue(data, 10);
             }
 
             public static int GetIntValue(byte[] bin, int offset)
@@ -98,7 +98,7 @@ namespace UTJ.ProfilerReader.Analyzer
             {
                 return;
             }
-            System.Guid guid = new System.Guid(guidBin);
+            Guid guid = new Guid(guidBin);
 
             CaptureData captureData = null;
             if (guid != MetadataGuid)
@@ -108,10 +108,10 @@ namespace UTJ.ProfilerReader.Analyzer
             if (tagId == InfoTag)
             {
                 captureData = new CaptureData(frameIdx,valueBin);
-                this.captureFrameData.Add(captureData.idx, captureData);
+                captureFrameData.Add(captureData.idx, captureData);
                 return;
             }
-            if( this.captureFrameData.TryGetValue(tagId,out captureData)){
+            if( captureFrameData.TryGetValue(tagId,out captureData)){
                 ExecuteBinData(captureData, valueBin);
             }
         }
@@ -120,9 +120,9 @@ namespace UTJ.ProfilerReader.Analyzer
         {
             if (!createDir)
             {
-                if (!Directory.Exists(this.outputPath))
+                if (!Directory.Exists(outputPath))
                 {
-                    Directory.CreateDirectory(this.outputPath);
+                    Directory.CreateDirectory(outputPath);
                 }
                 createDir = true;
             }
@@ -131,13 +131,13 @@ namespace UTJ.ProfilerReader.Analyzer
         // execute data
         private void ExecuteBinData(CaptureData captureData,byte[] binData)
         {
-            this.InitDirectory();
+            InitDirectory();
 
             string file = GetFilePath(captureData);
             byte[] pngBin = null;
 #if UNITY_EDITOR
             pngBin = ImageConversion.EncodeArrayToPNG(binData,
-                UnityEngine.Experimental.Rendering.GraphicsFormat.R8G8B8A8_SRGB,
+                GraphicsFormat.R8G8B8A8_SRGB,
                 (uint)captureData.width, (uint)captureData.height);
 
             // debug!
@@ -152,7 +152,7 @@ namespace UTJ.ProfilerReader.Analyzer
         private string GetFilePath(CaptureData captureData)
         {
             stringBuilder.Length = 0;
-            stringBuilder.Append(this.outputPath).Append("/ss-");
+            stringBuilder.Append(outputPath).Append("/ss-");
             stringBuilder.Append(string.Format("{0:D5}", captureData.idx));
             stringBuilder.Append(".png");
             return stringBuilder.ToString();
@@ -161,8 +161,8 @@ namespace UTJ.ProfilerReader.Analyzer
 
         public void SetFileInfo(string logfilename, string outputpath)
         {
-            this.outputPath = Path.Combine(outputpath, "screenshots");
-            this.logFile = logfilename;
+            outputPath = Path.Combine(outputpath, "screenshots");
+            logFile = logfilename;
         }
 
         public void WriteResultFile(string logfilaneme, string outputpath)

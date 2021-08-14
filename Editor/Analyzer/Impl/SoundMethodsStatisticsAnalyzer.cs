@@ -1,10 +1,10 @@
 ﻿namespace UTJ.ProfilerReader.Analyzer
 {
-    public class SoundScriptStatisticsAnalyzeToFile : MainThreadAnalyzeToFile
+    public class SoundMethodsStatisticsAnalyzer : MainThreadMethodsStatisticsAnalyzer
     {
         protected override bool IsSampleNameMatched(string name)
         {
-            foreach (var method in SoundScriptAnalyzeToFile.MethodPatterns)
+            foreach (var method in SoundMethodPerFrameAnalyzer.MethodPatterns)
             {
                 if (name.Contains(method))
                 {
@@ -15,9 +15,6 @@
             return false;
         }
 
-        protected override string FooterName
-        {
-            get { return "_main_thread_sound_methods_statistics.csv"; }
-        }
+        protected override string FooterName => "_main_thread_sound_methods_statistics.csv";
     }
 }

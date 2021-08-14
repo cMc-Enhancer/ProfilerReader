@@ -4,7 +4,7 @@ using UTJ.ProfilerReader.BinaryData;
 
 namespace UTJ.ProfilerReader.Analyzer
 {
-    public abstract class AbstractMethodSampleAnalyzer : AnalyzeToTextbaseFileBase
+    public abstract class AbstractMethodPerFrameSampleAnalyzer : AbstractTextBasedFileOutputAnalyzer
     {
         private class FrameSampleData
         {

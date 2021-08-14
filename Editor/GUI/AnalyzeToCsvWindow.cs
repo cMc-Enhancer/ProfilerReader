@@ -19,7 +19,7 @@ namespace UTJ.ProfilerReader.UI
         }
 
         private List<FileWriterFlag> fileWriterFlags = new List<FileWriterFlag>();
-        private List<IAnalyzeFileWriter> analyzeExecutes = new List<IAnalyzeFileWriter>();
+        private List<IAnalyzer> analyzeExecutes = new List<IAnalyzer>();
         private ILogReaderPerFrameData logReader = null;
         private bool isFirstFrame = true;
         private Vector2 scrollPos;
@@ -44,7 +44,7 @@ namespace UTJ.ProfilerReader.UI
         {
             this.isWindowExists = true;
             this.fileWriterFlags.Clear();
-            var types = AnalyzerUtil.GetInterfaceTypes<IAnalyzeFileWriter>();
+            var types = AnalyzerUtil.GetInterfaceTypes<IAnalyzer>();
             foreach (var t in types)
             {
                 this.fileWriterFlags.Add(new FileWriterFlag() {name = t.Name, type = t, flag = true});
@@ -205,7 +205,7 @@ namespace UTJ.ProfilerReader.UI
             {
                 if (this.fileWriterFlags[i].flag)
                 {
-                    var analyzer = Activator.CreateInstance(fileWriterFlags[i].type) as IAnalyzeFileWriter;
+                    var analyzer = Activator.CreateInstance(fileWriterFlags[i].type) as IAnalyzer;
                     analyzeExecutes.Add(analyzer);
                 }
             }
@@ -252,7 +252,7 @@ namespace UTJ.ProfilerReader.UI
             }
         }
 
-        private void SetAnalyzerInfo(List<IAnalyzeFileWriter> analyzeExecutes, ILogReaderPerFrameData logReader)
+        private void SetAnalyzerInfo(List<IAnalyzer> analyzeExecutes, ILogReaderPerFrameData logReader)
         {
             ProfilerLogFormat format = ProfilerLogFormat.TypeData;
             if (logReader.GetType() == typeof(ProfilerRawLogReader))

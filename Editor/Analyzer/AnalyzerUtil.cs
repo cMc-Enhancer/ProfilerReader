@@ -3,23 +3,23 @@ using System.Collections.Generic;
 
 namespace UTJ.ProfilerReader.Analyzer
 {
-    public class AnalyzerUtil
+    public static class AnalyzerUtil
     {
-        public static List<IAnalyzeFileWriter> CreateSourceTestAnalyzer()
+        public static List<IAnalyzer> CreateSourceTestAnalyzer()
         {
-            return new List<IAnalyzeFileWriter>
+            return new List<IAnalyzer>
             {
-                new MainThreadAnalyzeToFile(),
-                new SoundScriptAnalyzeToFile(),
-                new SoundScriptStatisticsAnalyzeToFile(),
-                new RenderingAnalyzeToFile(),
+                new MainThreadMethodsStatisticsAnalyzer(),
+                new SoundMethodPerFrameAnalyzer(),
+                new SoundMethodsStatisticsAnalyzer(),
+                new RenderingAnalyzer(),
             };
         }
 
-        public static List<IAnalyzeFileWriter> CreateAllAnalyzer()
+        public static List<IAnalyzer> CreateAllAnalyzer()
         {
-            var types = GetInterfaceTypes<IAnalyzeFileWriter>();
-            return InstanciateObjectsOfType<IAnalyzeFileWriter>(types);
+            var types = GetInterfaceTypes<IAnalyzer>();
+            return InstanciateObjectsOfType<IAnalyzer>(types);
         }
 
         private static List<T> InstanciateObjectsOfType<T>(List<Type> types) where T : class

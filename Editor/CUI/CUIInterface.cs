@@ -212,7 +212,7 @@ namespace UTJ.ProfilerReader
             return retCode;
         }
 
-        private static void SetAnalyzerInfo(List<IAnalyzeFileWriter> analyzers,
+        private static void SetAnalyzerInfo(List<IAnalyzer> analyzers,
             ILogReaderPerFrameData logReader, string outDir, string inFile)
         {
             ProfilerLogFormat format = ProfilerLogFormat.TypeData;

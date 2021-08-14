@@ -2,9 +2,8 @@
 
 namespace UTJ.ProfilerReader.Analyzer
 {
-    public class SoundScriptAnalyzeToFile : AbstractMethodSampleAnalyzer
+    public class SoundMethodPerFrameAnalyzer : AbstractMethodPerFrameSampleAnalyzer
     {
-
         public static readonly List<string> MethodPatterns = new List<string>
         {
             "AkAudioListener.Update()",
@@ -25,7 +24,7 @@ namespace UTJ.ProfilerReader.Analyzer
             "WeaponSoundNunchucks",
             "WeaponSoundBat",
         };
-        
+
         protected override bool IsSampleNameMatched(string name)
         {
             foreach (var method in MethodPatterns)
@@ -39,9 +38,6 @@ namespace UTJ.ProfilerReader.Analyzer
             return false;
         }
 
-        protected override string FooterName
-        {
-            get { return "_sound_method_per_frame.csv"; }
-        }
+        protected override string FooterName => "_sound_method_per_frame.csv";
     }
 }

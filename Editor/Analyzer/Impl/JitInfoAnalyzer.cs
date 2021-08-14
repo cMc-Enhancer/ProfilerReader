@@ -1,51 +1,48 @@
 ﻿using System.Collections.Generic;
 using UTJ.ProfilerReader.BinaryData;
-
 using UTJ.ProfilerReader.BinaryData.Stats;
 
 namespace UTJ.ProfilerReader.Analyzer
 {
-
-    public class JitInfoAnalyzeToFile : AnalyzeToTextbaseFileBase
+    public class JitInfoAnalyzer : AbstractTextBasedFileOutputAnalyzer
     {
         private Dictionary<ulong, JitInfo> jitInfoDict = new Dictionary<ulong, JitInfo>();
 
-
         public override void CollectData(ProfilerFrameData frameData)
         {
-            if( frameData == null )
+            if (frameData == null)
             {
                 return;
             }
+
             var jitInfos = frameData.m_jitInfos;
-            if( jitInfos == null)
+            if (jitInfos == null)
             {
                 return;
             }
-            foreach( var jitInfo in jitInfos)
+
+            foreach (var jitInfo in jitInfos)
             {
-                if(jitInfo == null) { continue; }
-                if(!jitInfoDict.ContainsKey(jitInfo.codeAddr))
+                if (jitInfo == null)
+                {
+                    continue;
+                }
+
+                if (!jitInfoDict.ContainsKey(jitInfo.codeAddr))
                 {
                     jitInfoDict.Add(jitInfo.codeAddr, jitInfo);
                 }
             }
-
         }
 
-
-
-        /// <summary>
-        /// 結果書き出し
-        /// </summary>
         protected override string GetResultText()
         {
             CsvStringGenerator csvStringGenerator = new CsvStringGenerator();
             AppendHeaderToStringBuilder(csvStringGenerator);
             List<JitInfo> sortedJitInfo = new List<JitInfo>(this.jitInfoDict.Values);
-            sortedJitInfo.Sort(new JitInfo.CompareByAddr() );
+            sortedJitInfo.Sort(new JitInfo.CompareByAddr());
 
-            foreach( var jitInfo in sortedJitInfo)
+            foreach (var jitInfo in sortedJitInfo)
             {
                 string name = jitInfo.name;
                 string sourceFileName = jitInfo.sourceFileName;
@@ -60,7 +57,6 @@ namespace UTJ.ProfilerReader.Analyzer
             return csvStringGenerator.ToString();
         }
 
-
         private void AppendHeaderToStringBuilder(CsvStringGenerator csvStringGenerator)
         {
             csvStringGenerator.AppendColumn("Address");
@@ -72,14 +68,6 @@ namespace UTJ.ProfilerReader.Analyzer
             csvStringGenerator.NextRow();
         }
 
-
-        protected override string FooterName
-        {
-            get
-            {
-                return "_jitInfos.csv";
-            }
-        }
-
+        protected override string FooterName => "_jitInfos.csv";
     }
 }

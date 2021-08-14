@@ -1,15 +1,12 @@
 ﻿namespace UTJ.ProfilerReader.Analyzer
 {
-    public class AiScriptAnalyzeToFile : AbstractMethodSampleAnalyzer
+    public class AiMethodPerFrameAnalyzer : AbstractMethodPerFrameSampleAnalyzer
     {
         protected override bool IsSampleNameMatched(string name)
         {
             return name.Contains("AiPlayer") || name.Contains("NeoPath");
         }
 
-        protected override string FooterName
-        {
-            get { return "_ai_method_per_frame.csv"; }
-        }
+        protected override string FooterName => "_ai_method_per_frame.csv";
     }
 }
