@@ -16,6 +16,6 @@ namespace UTJ.ProfilerReader.Analyzer
 
         void CollectData(ProfilerFrameData frameData);
 
-        void WriteResultFile(string logfilaneme, string outputpath);
+        void WriteResultFile(string logfilename, string outputpath);
     }
 }

@@ -25,11 +25,11 @@ namespace UTJ.ProfilerReader.Analyzer
 
         protected abstract string GetResultText();
 
-        public void WriteResultFile(string logfile, string outputpath)
+        public void WriteResultFile(string logfilename, string outputpath)
         {
             try
             {
-                string path = Path.Combine(outputpath, logfile.Replace(".", "_") + FooterName);
+                string path = Path.Combine(outputpath, logfilename.Replace(".", "_") + FooterName);
                 string result = GetResultText();
                 File.WriteAllText(path, result);
             }

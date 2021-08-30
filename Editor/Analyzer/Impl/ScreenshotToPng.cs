@@ -165,7 +165,7 @@ namespace UTJ.ProfilerReader.Analyzer
             logFile = logfilename;
         }
 
-        public void WriteResultFile(string logfilaneme, string outputpath)
+        public void WriteResultFile(string logfilename, string outputpath)
         {
         }
 
