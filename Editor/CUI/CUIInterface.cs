@@ -154,15 +154,24 @@ namespace UTJ.ProfilerReader
                 }
             }
 
-            var logReader = ProfilerLogUtil.CreateLogReader(inputFile);
-            currentReader = logReader;
+            retCode = UtjAnalyzer(inputFile, outputDir, logFlag, enableAllAnalyzers, retCode);
+
+            SimpleAnalyzer(inputFile);
+
+            return retCode;
+        }
+
+        private static int UtjAnalyzer(string inputFile, string outputDir, bool logFlag, bool enableAllAnalyzers,
+            int retCode)
+        {
+            currentReader = ProfilerLogUtil.CreateLogReader(inputFile);
 
             var analyzers = enableAllAnalyzers
                 ? AnalyzerUtil.CreateAllAnalyzer()
                 : AnalyzerUtil.CreateSourceTestAnalyzer();
 
-            var frameData = logReader.ReadFrameData();
-            SetAnalyzerInfo(analyzers, logReader, outputDir, inputFile);
+            var frameData = currentReader.ReadFrameData();
+            SetAnalyzerInfo(analyzers, currentReader, outputDir, inputFile);
 
             if (frameData == null)
             {
@@ -174,7 +183,7 @@ namespace UTJ.ProfilerReader
             {
                 try
                 {
-                    frameData = logReader.ReadFrameData();
+                    frameData = currentReader.ReadFrameData();
                     if (logFlag && frameData != null)
                     {
                         Console.WriteLine("ReadFrame:" + frameData.frameIndex);
@@ -210,6 +219,20 @@ namespace UTJ.ProfilerReader
             }
 
             return retCode;
+        }
+
+        private static void SimpleAnalyzer(string inputFile)
+        {
+            List<ISimpleAnalyzer> analyzers = AnalyzerUtil.CreateSimpleAnalyzers();
+            
+            Debug.Log("Simple analyzer processing file " + inputFile);
+
+            foreach (var analyzer in analyzers)
+            {
+                analyzer.Analyze(inputFile);
+            }
+            
+            GC.Collect();
         }
 
         private static void SetAnalyzerInfo(List<IAnalyzer> analyzers,

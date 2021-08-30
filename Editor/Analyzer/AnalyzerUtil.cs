@@ -16,6 +16,14 @@ namespace UTJ.ProfilerReader.Analyzer
             };
         }
 
+        public static List<ISimpleAnalyzer> CreateSimpleAnalyzers()
+        {
+            return new List<ISimpleAnalyzer>
+            {
+                new MainThreadAnalyzer()
+            };
+        }
+
         public static List<IAnalyzer> CreateAllAnalyzer()
         {
             var types = GetInterfaceTypes<IAnalyzer>();
