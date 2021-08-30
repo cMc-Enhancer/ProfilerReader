@@ -2,7 +2,7 @@
 
 namespace UTJ.ProfilerReader.Analyzer
 {
-    public class SoundMethodPerFrameAnalyzer : AbstractMethodPerFrameSampleAnalyzer
+    public class SoundMethodPerFrameAnalyzer : MainThreadMethodPerFrameSampleAnalyzer
     {
         public static readonly List<string> MethodPatterns = new List<string>
         {

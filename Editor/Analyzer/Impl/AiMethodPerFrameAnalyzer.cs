@@ -1,6 +1,6 @@
 ﻿namespace UTJ.ProfilerReader.Analyzer
 {
-    public class AiMethodPerFrameAnalyzer : AbstractMethodPerFrameSampleAnalyzer
+    public class AiMethodPerFrameAnalyzer : MainThreadMethodPerFrameSampleAnalyzer
     {
         protected override bool IsSampleNameMatched(string name)
         {
