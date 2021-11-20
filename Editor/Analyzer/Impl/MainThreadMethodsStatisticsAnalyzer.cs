@@ -76,12 +76,17 @@ namespace UTJ.ProfilerReader.Analyzer
             {
                 EnsureFlattenedAndSorted();
 
-                return flattenedCallExecTimes.Average();
+                return flattenedCallExecTimes.Count == 0 ? 0 : flattenedCallExecTimes.Average();
             }
 
             public float CallStandardDeviation()
             {
                 EnsureFlattenedAndSorted();
+
+                if (flattenedCallExecTimes.Count == 0)
+                {
+                    return 0;
+                }
 
                 float avg = CallAverage();
                 double sum = flattenedCallExecTimes.Sum(d => Math.Pow(d - avg, 2));

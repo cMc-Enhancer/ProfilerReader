@@ -10,11 +10,10 @@ namespace UTJ.ProfilerReader.Analyzer
             return new List<IAnalyzer>
             {
                 new MainThreadMethodsStatisticsAnalyzer(),
-                new MainThreadMethodPerFrameSampleAnalyzer(),
-                new AiMethodPerFrameAnalyzer(),
-                new SoundMethodPerFrameAnalyzer(),
-                new SoundMethodsStatisticsAnalyzer(),
-                new RenderingAnalyzer(),
+                // new AiMethodPerFrameAnalyzer(),
+                // new SoundMethodPerFrameAnalyzer(),
+                // new SoundMethodsStatisticsAnalyzer(),
+                // new RenderingAnalyzer(),
             };
         }
 
