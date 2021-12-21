@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
-using UnityEditor;
 using UnityEngine;
 using UTJ.ProfilerReader.Analyzer;
 using UTJ.ProfilerReader.RawData;
@@ -129,6 +128,16 @@ namespace UTJ.ProfilerReader
                 {
                     string file = Path.GetFileName(inputFile);
                     outputDir = Path.Combine(Path.GetDirectoryName(inputFile), file.Replace('.', '_'));
+                }
+            }
+
+            String[] files = Directory.GetFiles(outputDir, inputFile.Replace(".raw", ""));
+            foreach (string file in files)
+            {
+                if (file.EndsWith(".csv"))
+                {
+                    Console.WriteLine("Output file found for raw file " + inputFile + ", skip");
+                    return;
                 }
             }
 
