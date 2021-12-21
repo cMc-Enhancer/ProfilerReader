@@ -44,7 +44,6 @@ namespace UTJ.ProfilerReader
             string inputFile = null;
             string inputDir = null;
             string outputDir = null;
-            bool exitFlag = true;
             bool logFlag = false;
             bool isLegacyOutputDirPath = false;
             bool enableAllAnalyzers = false;
@@ -81,11 +80,6 @@ namespace UTJ.ProfilerReader
                     i += 1;
                 }
 
-                if (args[i] == "-PH.exitcode")
-                {
-                    exitFlag = true;
-                }
-
                 if (args[i] == "-PH.log")
                 {
                     logFlag = true;
@@ -102,45 +96,29 @@ namespace UTJ.ProfilerReader
                 }
             }
 
-            int code = 0;
             if (inputFile != null)
             {
-                code = ProfilerToCsv(inputFile, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers);
+                ProfilerToCsv(inputFile, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers);
             }
             else
             {
-                code = BatchProfilerToCsv(inputDir, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers);
-            }
-
-            if (timeouted)
-            {
-                code = TimeoutCode;
-            }
-
-            if (exitFlag)
-            {
-                EditorApplication.Exit(code);
+                BatchProfilerToCsv(inputDir, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers);
             }
         }
 
-        public static int BatchProfilerToCsv(string inputDir, string outputDir, bool logFlag,
+        public static void BatchProfilerToCsv(string inputDir, string outputDir, bool logFlag,
             bool isLegacyOutputDirPath, bool enableAllAnalyzers)
         {
             var files = Directory.GetFiles(inputDir, "*.raw");
-            int code = 0;
             foreach (var file in files)
             {
-                code = Math.Max(ProfilerToCsv(file, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers),
-                    code);
+                ProfilerToCsv(file, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers);
             }
-
-            return NormalCode;
         }
 
-        public static int ProfilerToCsv(string inputFile, string outputDir, bool logFlag, bool isLegacyOutputDirPath,
+        public static void ProfilerToCsv(string inputFile, string outputDir, bool logFlag, bool isLegacyOutputDirPath,
             bool enableAllAnalyzers)
         {
-            int retCode = NormalCode;
             if (string.IsNullOrEmpty(outputDir))
             {
                 if (isLegacyOutputDirPath)
@@ -154,15 +132,12 @@ namespace UTJ.ProfilerReader
                 }
             }
 
-            retCode = UtjAnalyzer(inputFile, outputDir, logFlag, enableAllAnalyzers, retCode);
+            UtjAnalyzer(inputFile, outputDir, logFlag, enableAllAnalyzers);
 
             SimpleAnalyzer(inputFile);
-
-            return retCode;
         }
 
-        private static int UtjAnalyzer(string inputFile, string outputDir, bool logFlag, bool enableAllAnalyzers,
-            int retCode)
+        private static void UtjAnalyzer(string inputFile, string outputDir, bool logFlag, bool enableAllAnalyzers)
         {
             currentReader = ProfilerLogUtil.CreateLogReader(inputFile);
 
@@ -191,8 +166,8 @@ namespace UTJ.ProfilerReader
                 }
                 catch (Exception e)
                 {
-                    retCode = ReadErrorCode;
                     Debug.LogError(e);
+                    return;
                 }
 
                 foreach (var analyzer in analyzers)
@@ -217,8 +192,6 @@ namespace UTJ.ProfilerReader
             {
                 analyzer.WriteResultFile(Path.GetFileName(inputFile), outputDir);
             }
-
-            return retCode;
         }
 
         private static void SimpleAnalyzer(string inputFile)
