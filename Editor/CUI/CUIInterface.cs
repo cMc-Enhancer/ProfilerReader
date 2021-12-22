@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
+using UnityEditor;
 using UnityEngine;
 using UTJ.ProfilerReader.Analyzer;
 using UTJ.ProfilerReader.RawData;
@@ -103,6 +104,8 @@ namespace UTJ.ProfilerReader
             {
                 BatchProfilerToCsv(inputDir, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers);
             }
+
+            EditorApplication.Exit(0);
         }
 
         public static void BatchProfilerToCsv(string inputDir, string outputDir, bool logFlag,
@@ -131,14 +134,11 @@ namespace UTJ.ProfilerReader
                 }
             }
 
-            String[] files = Directory.GetFiles(outputDir, inputFile.Replace(".raw", ""));
-            foreach (string file in files)
+            String[] files = Directory.GetFiles(outputDir, Path.GetFileName(inputFile).Replace(".raw", "_*.csv"));
+            if (files.Length > 0)
             {
-                if (file.EndsWith(".csv"))
-                {
-                    Console.WriteLine("Output file found for raw file " + inputFile + ", skip");
-                    return;
-                }
+                Console.WriteLine("Output file found for raw file " + inputFile + ", skip");
+                return;
             }
 
             UtjAnalyzer(inputFile, outputDir, logFlag, enableAllAnalyzers);
@@ -206,14 +206,14 @@ namespace UTJ.ProfilerReader
         private static void SimpleAnalyzer(string inputFile)
         {
             List<ISimpleAnalyzer> analyzers = AnalyzerUtil.CreateSimpleAnalyzers();
-            
+
             Debug.Log("Simple analyzer processing file " + inputFile);
 
             foreach (var analyzer in analyzers)
             {
                 analyzer.Analyze(inputFile);
             }
-            
+
             GC.Collect();
         }
 
