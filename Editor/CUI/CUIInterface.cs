@@ -141,7 +141,7 @@ namespace UTJ.ProfilerReader
                 return;
             }
 
-            UtjAnalyzer(inputFile, outputDir, logFlag, enableAllAnalyzers);
+            // UtjAnalyzer(inputFile, outputDir, logFlag, enableAllAnalyzers);
 
             SimpleAnalyzer(inputFile);
         }
