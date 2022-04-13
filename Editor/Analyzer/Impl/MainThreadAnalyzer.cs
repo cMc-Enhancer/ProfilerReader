@@ -34,6 +34,7 @@ namespace UTJ.ProfilerReader.Analyzer
             public string totalPercent;
             public string selfPercent;
             public string calls;
+            public string gcAlloc;
             public string totalTime;
             public string selfTime;
 
@@ -44,6 +45,7 @@ namespace UTJ.ProfilerReader.Analyzer
                 totalPercent = property.GetColumn(HierarchyFrameDataView.columnTotalPercent);
                 selfPercent = property.GetColumn(HierarchyFrameDataView.columnSelfPercent);
                 calls = property.GetColumn(HierarchyFrameDataView.columnCalls);
+                gcAlloc = property.GetColumn(HierarchyFrameDataView.columnGcMemory);
                 totalTime = property.GetColumn(HierarchyFrameDataView.columnTotalTime);
                 selfTime = property.GetColumn(HierarchyFrameDataView.columnSelfTime);
             }
@@ -124,13 +126,14 @@ namespace UTJ.ProfilerReader.Analyzer
                 .AppendColumn("totalPercent")
                 .AppendColumn("selfPercent")
                 .AppendColumn("calls")
+                .AppendColumn("gcAlloc")
                 .AppendColumn("totalTime")
                 .AppendColumn("selfTime")
                 .NextRow();
 
             foreach (var frame in frameSamples)
             {
-                foreach (var sample in frame.samples)
+                foreach (Sample sample in frame.samples)
                 {
                     csvStringGenerator
                         .AppendColumn(frame.fileIndex)
@@ -142,6 +145,7 @@ namespace UTJ.ProfilerReader.Analyzer
                         .AppendColumn(sample.totalPercent)
                         .AppendColumn(sample.selfPercent)
                         .AppendColumn(sample.calls)
+                        .AppendColumn(sample.gcAlloc)
                         .AppendColumn(sample.totalTime)
                         .AppendColumn(sample.selfTime)
                         .NextRow();
