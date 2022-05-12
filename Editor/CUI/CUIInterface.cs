@@ -11,10 +11,6 @@ namespace UTJ.ProfilerReader
 {
     public class CUIInterface
     {
-        const int NormalCode = 0;
-        const int TimeoutCode = 10;
-        const int ReadErrorCode = 11;
-
         private static int timeoutSec = 0;
         private static ILogReaderPerFrameData currentReader = null;
         private static bool timeouted = false;
@@ -41,21 +37,11 @@ namespace UTJ.ProfilerReader
         public static void ProfilerToCsv()
         {
             var args = Environment.GetCommandLineArgs();
-            string inputFile = null;
             string inputDir = null;
             string outputDir = null;
-            bool logFlag = false;
-            bool isLegacyOutputDirPath = false;
-            bool enableAllAnalyzers = false;
 
             for (int i = 0; i < args.Length; ++i)
             {
-                if (args[i] == "-PH.inputFile")
-                {
-                    inputFile = args[i + 1];
-                    i += 1;
-                }
-
                 if (args[i] == "-PH.inputDir")
                 {
                     inputDir = args[i + 1];
@@ -79,59 +65,27 @@ namespace UTJ.ProfilerReader
                     overrideUnityVersion = args[i + 1];
                     i += 1;
                 }
-
-                if (args[i] == "-PH.log")
-                {
-                    logFlag = true;
-                }
-
-                if (args[i] == "-PH.dirLegacy") ;
-                {
-                    isLegacyOutputDirPath = true;
-                }
-
-                if (args[i] == "-PH.enableAllAnalyzers")
-                {
-                    enableAllAnalyzers = true;
-                }
             }
 
-            if (inputFile != null)
-            {
-                ProfilerToCsv(inputFile, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers);
-            }
-            else
-            {
-                BatchProfilerToCsv(inputDir, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers);
-            }
+            BatchProfilerToCsv(inputDir, outputDir);
 
             EditorApplication.Exit(0);
         }
 
-        public static void BatchProfilerToCsv(string inputDir, string outputDir, bool logFlag,
-            bool isLegacyOutputDirPath, bool enableAllAnalyzers)
+        public static void BatchProfilerToCsv(string inputDir, string outputDir)
         {
             var files = Directory.GetFiles(inputDir, "*.raw");
             foreach (var file in files)
             {
-                ProfilerToCsv(file, outputDir, logFlag, isLegacyOutputDirPath, enableAllAnalyzers);
+                ProfilerToCsv(file, outputDir);
             }
         }
 
-        public static void ProfilerToCsv(string inputFile, string outputDir, bool logFlag, bool isLegacyOutputDirPath,
-            bool enableAllAnalyzers)
+        public static void ProfilerToCsv(string inputFile, string outputDir)
         {
             if (string.IsNullOrEmpty(outputDir))
             {
-                if (isLegacyOutputDirPath)
-                {
-                    outputDir = Path.GetDirectoryName(inputFile);
-                }
-                else
-                {
-                    string file = Path.GetFileName(inputFile);
-                    outputDir = Path.Combine(Path.GetDirectoryName(inputFile), file.Replace('.', '_'));
-                }
+                outputDir = Path.GetDirectoryName(inputFile);
             }
 
             String[] files = Directory.GetFiles(outputDir, Path.GetFileName(inputFile).Replace(".raw", "_*.csv"));
@@ -141,18 +95,16 @@ namespace UTJ.ProfilerReader
                 return;
             }
 
-            // UtjAnalyzer(inputFile, outputDir, logFlag, enableAllAnalyzers);
+            UtjAnalyzer(inputFile, outputDir);
 
             SimpleAnalyzer(inputFile);
         }
 
-        private static void UtjAnalyzer(string inputFile, string outputDir, bool logFlag, bool enableAllAnalyzers)
+        private static void UtjAnalyzer(string inputFile, string outputDir)
         {
             currentReader = ProfilerLogUtil.CreateLogReader(inputFile);
 
-            var analyzers = enableAllAnalyzers
-                ? AnalyzerUtil.CreateAllAnalyzer()
-                : AnalyzerUtil.CreateSourceTestAnalyzer();
+            var analyzers = AnalyzerUtil.CreateSourceTestAnalyzer();
 
             var frameData = currentReader.ReadFrameData();
             SetAnalyzerInfo(analyzers, currentReader, outputDir, inputFile);
@@ -168,7 +120,7 @@ namespace UTJ.ProfilerReader
                 try
                 {
                     frameData = currentReader.ReadFrameData();
-                    if (logFlag && frameData != null)
+                    if (frameData != null)
                     {
                         Console.WriteLine("ReadFrame:" + frameData.frameIndex);
                     }
