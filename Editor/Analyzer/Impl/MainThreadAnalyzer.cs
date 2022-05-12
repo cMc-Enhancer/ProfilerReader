@@ -14,6 +14,7 @@ namespace UTJ.ProfilerReader.Analyzer
             public int fileIndex;
             public int frameIndex;
             public string frameTime;
+            public string frameGpuTime;
             public string frameFPS;
             public bool hasPlayerLoop;
             public List<Sample> samples = new List<Sample>();
@@ -23,6 +24,7 @@ namespace UTJ.ProfilerReader.Analyzer
                 this.fileIndex = fileIndex;
                 this.frameIndex = frameIndex;
                 this.frameTime = rawFrameDataView.frameTimeMs.ToString();
+                this.frameGpuTime = rawFrameDataView.frameGpuTimeMs.ToString();
                 this.frameFPS = rawFrameDataView.frameFps.ToString();
             }
         }
@@ -81,7 +83,7 @@ namespace UTJ.ProfilerReader.Analyzer
             List<FrameSample> frames = new List<FrameSample>();
             for (int frameIndex = firstFrameIndex; frameIndex <= lastFrameIndex; ++frameIndex)
             {
-                var rawFrameDataView = ProfilerDriver.GetRawFrameDataView(frameIndex, 0);
+                RawFrameDataView rawFrameDataView = ProfilerDriver.GetRawFrameDataView(frameIndex, 0);
                 FrameSample frameSample = new FrameSample(fileIndex, frameIndex, rawFrameDataView);
 
                 var property = new ProfilerProperty();
@@ -120,6 +122,7 @@ namespace UTJ.ProfilerReader.Analyzer
                 .AppendColumn("fileIndex")
                 .AppendColumn("frameIndex")
                 .AppendColumn("frameTime")
+                .AppendColumn("frameGpuTime")
                 .AppendColumn("frameFPS")
                 .AppendColumn("propertyName")
                 .AppendColumn("propertyPath")
@@ -139,6 +142,7 @@ namespace UTJ.ProfilerReader.Analyzer
                         .AppendColumn(frame.fileIndex)
                         .AppendColumn(frame.frameIndex)
                         .AppendColumn(frame.frameTime)
+                        .AppendColumn(frame.frameGpuTime)
                         .AppendColumn(frame.frameFPS)
                         .AppendColumn(sample.propertyName)
                         .AppendColumn(sample.propertyPath)
