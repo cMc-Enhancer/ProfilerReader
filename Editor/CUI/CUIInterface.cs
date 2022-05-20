@@ -95,7 +95,7 @@ namespace UTJ.ProfilerReader
                 return;
             }
 
-            UtjAnalyzer(inputFile, outputDir);
+            // UtjAnalyzer(inputFile, outputDir);
 
             SimpleAnalyzer(inputFile);
         }
